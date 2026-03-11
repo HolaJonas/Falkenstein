@@ -1,3 +1,7 @@
 .venv
-data/
-__pycache__
+data/CUB_200_2001/CUB_200_2001.tgz
+data/attributes.txtg
+src/falkenstein/__pycache__
+src/falkenstein/utils/__pycache__
+results
+weights
