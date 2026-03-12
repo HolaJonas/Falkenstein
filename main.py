@@ -10,6 +10,9 @@ import torch
 import random
 import numpy as np
 from datetime import datetime
+import os
+import sys
+from src.falkenstein.utils.logger import Tee
 
 
 def seed() -> None:
@@ -21,25 +24,44 @@ def seed() -> None:
     torch.cuda.manual_seed_all(0)
 
 
-def init_cuda(fraction: float = 0.33):
+def init_cuda(fraction: float = 0.33) -> torch.device:
     """Initializes all necessary cuda settings to limit capacity.
 
     Returns:
-        Device: _description_
-    """    
+        torch.device: The device used for training
+    """
+
     set_per_process_memory_fraction(fraction=fraction)
     torch.set_num_threads(3)
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-if __name__ == "__main__":
+def model(config: str, cub_200_2001_path: str) -> None:
+    """Trains, validates and tests a DenseNet121-based classification model on CUB-200-2011.
+
+
+    Args:
+        config (str): The path of a yaml config containing:
+            'train_split',
+            'validation_split',
+            'test_split',
+            'learning_rate',
+            'label_smoothing',
+            'patience',
+            'num_epochs',
+            'batch_size',
+            'weight_decay'
+
+        cub_200_2001_path (str): The path to the dataset
+    """
+
     seed()
     device = init_cuda(0.33)
 
-    with open("config.yaml") as f:
+    with open(config) as f:
         config = yaml.safe_load(f)
 
-    dataset = generate_dataset("data/CUB_200_2011/images")
+    dataset = generate_dataset(cub_200_2001_path)
     train_data, validate_data, test_data = create_dataloaders(
         dataset=dataset,
         train_split=config["train_split"],
@@ -49,20 +71,38 @@ if __name__ == "__main__":
     )
 
     model = Falkenstein().to(device=device)
-    optimizer = AdamW(params=model.parameters(), lr=config["learning_rate"], weight_decay=config["weight_decay"])
+    optimizer = AdamW(
+        params=model.parameters(),
+        lr=config["learning_rate"],
+        weight_decay=config["weight_decay"],
+    )
     scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=config["num_epochs"])
     criterion = nn.CrossEntropyLoss(label_smoothing=config["label_smoothing"])
     train(
         model=model,
-        dataloader=train_data,
+        train_data=train_data,
         validation_data=validate_data,
         criterion=criterion,
         optimizer=optimizer,
         num_epochs=config["num_epochs"],
         device=device,
         patience=config["patience"],
-        scheduler=scheduler
+        scheduler=scheduler,
     )
     torch.save(model.state_dict(), f"weights/{datetime.now()}")
     test(model=model, dataloader=train_data, device=device)
+    test(model=model, dataloader=validate_data, device=device)
     test(model=model, dataloader=test_data, device=device)
+
+
+if __name__ == "__main__":
+    os.makedirs("logs", exist_ok=True)
+    log_path = f"logs/{datetime.now()}.log"
+    log_file = open(log_path, "w")
+
+    sys.stdout = Tee(sys.__stdout__, log_file)
+    sys.stderr = Tee(sys.__stderr__, log_file)
+
+    print("test")
+
+    model("config.yaml", "data/CUB_200_2011/images")
