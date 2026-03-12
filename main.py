@@ -2,8 +2,8 @@ from torch import nn
 from torch.optim import AdamW, lr_scheduler
 from src.falkenstein.models import Falkenstein
 from src.falkenstein.data import generate_dataset, create_dataloaders
-from train import train
-from test import test
+from src.falkenstein.train import train
+from src.falkenstein.test import test
 import yaml
 from torch.cuda.memory import set_per_process_memory_fraction
 import torch

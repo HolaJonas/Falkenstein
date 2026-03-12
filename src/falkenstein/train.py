@@ -10,7 +10,7 @@ from torch.optim import lr_scheduler
 
 def train(
     model: nn.Module,
-    dataloader: DataLoader,
+    train_data: DataLoader,
     validation_data: DataLoader,
     criterion: nn.Module,
     optimizer: optim.Optimizer,
@@ -23,7 +23,7 @@ def train(
 
     Args:
         model (nn.Module): The model to be trained
-        dataloader (DataLoader): The training data
+        train_data (DataLoader): The training data
         validation_data (DataLoader): The validation data
         criterion (nn.Module): The loss function to be trained with
         optimizer (optim.Optimizer): The optimizer used to train
@@ -41,7 +41,7 @@ def train(
     for epoch in tqdm.tqdm(range(num_epochs)):
         training_loss = 0.0
         model.train()
-        for input, label in dataloader:
+        for input, label in train_data:
             y_hat = model(input.to(device))
             loss = criterion(y_hat, label.to(device))
             training_loss += loss.item()
@@ -50,7 +50,7 @@ def train(
             optimizer.step()
         if scheduler is not None:
             scheduler.step()
-        training_loss /= len(dataloader)
+        training_loss /= len(train_data)
         training_loss_mem.append(training_loss)
 
         model.eval()
