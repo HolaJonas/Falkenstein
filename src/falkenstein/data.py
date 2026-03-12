@@ -10,7 +10,7 @@ from torchvision.transforms import (
     RandomResizedCrop,
     ColorJitter,
 )
-from torch import nn
+from torch import Tensor, nn
 from torch.utils.data import random_split, DataLoader, Dataset
 from PIL import Image
 
@@ -19,12 +19,9 @@ class AugmentedData(Dataset):
     """Implements a custom dataset with optinal transformations. Applies default transformations:
         Resize(224), CenterCrop(224), ToTenser(), Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 
-
     Args:
-        Dataset (_type_): _description_
-
-    Returns:
-        _type_: _description_
+        dataset (Dataset): The dataset
+        transforms (nn.Module): The transforms applied to the dataset
     """
 
     transforms = Compose(
@@ -36,14 +33,29 @@ class AugmentedData(Dataset):
         ]
     )
 
-    def __init__(self, dataloader: Dataset, transforms: nn.Module | None = None):
-        self.data = dataloader
+    def __init__(self, dataset: Dataset, transforms: nn.Module | None = None):
+        self.data = dataset
         self.transforms = transforms
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """Number of elements in the dataset.
+
+        Returns:
+            int: The number of elements in the dataset
+        """
+
         return len(self.data)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> tuple[Tensor, int]:
+        """Returns the imagedata at given index.
+
+        Args:
+            index (int): The index of the imagedata
+
+        Returns:
+            tuple[Tensor, int]: The image as a Tensor and its according label
+        """
+
         img, label = self.data.dataset.imgs[self.data.indices[index]]
         img = Image.open(img).convert("RGB")
         if self.transforms is not None:
@@ -69,19 +81,19 @@ def generate_dataset(path: str) -> ImageFolder:
 
 def create_dataloaders(
     dataset: ImageFolder,
-    train_split: float = 0.6,
+    train_split: float = 0.7,
     test_split: float = 0.2,
-    validation_split: float = 0.2,
-    batch_size: int = 10,
+    validation_split: float = 0.1,
+    batch_size: int = 64,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Splits the dataset into train-, validation- and test-data. Establishes batches.
 
     Args:
         dataset (ImageFolder): The dataset
-        train_split (float, optional): The train split in percent. Defaults to 0.6.
+        train_split (float, optional): The train split in percent. Defaults to 0.7.
         test_split (float, optional): The test split in percent. Defaults to 0.2.
-        validation_split (float, optional): The validatiom split in percent. Defaults to 0.2.
-        batch_size (int, optional): The batch size. Defaults to 10.
+        validation_split (float, optional): The validatiom split in percent. Defaults to 0.1.
+        batch_size (int, optional): The batch size. Defaults to 64.
 
     Returns:
         tuple[DataLoader, DataLoader, DataLoader]: A triple containing train-, validation- and testdata

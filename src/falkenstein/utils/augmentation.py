@@ -1,9 +1,16 @@
 from torchvision.transforms import Compose, Resize, RandomHorizontalFlip, RandomRotation
 from PIL import Image
 from pathlib import Path
-import os 
+import os
 
-def augment_image(path):
+
+@DeprecationWarning
+def augment_image(path: str) -> None:
+    """Augments an image off-line, by applying 'Resize(400)', 'RandomHorizontalFlip(p=0.5)' and 'RandomRotation(20)'
+
+    Args:
+        path (str): The path of the image
+    """
     image_transforms = Compose(
         [Resize(400), RandomHorizontalFlip(p=0.5), RandomRotation(20)]
     )
@@ -16,9 +23,17 @@ def augment_image(path):
     augmented_img.save(Path(new_path))
 
 
-def augment_dataset(path):
+@DeprecationWarning
+def augment_dataset(path: str) -> None:
+    """Augments a imageset off-line, by applying 'Resize(400)', 'RandomHorizontalFlip(p=0.5)' and
+    'RandomRotation(20)' to each image.
+
+    Args:
+        path (str): The path of the dataset
+        
+    """
+
     for subdir, dirs, images in os.walk(Path(path)):
         for image in images:
             cur_path = os.path.join(subdir, image)
             print(cur_path)
-
