@@ -13,6 +13,23 @@ from torchvision.transforms import (
 from torch import Tensor, nn
 from torch.utils.data import random_split, DataLoader, Dataset
 from PIL import Image
+import tarfile
+import os
+import torch
+
+
+def prepare_dataset(file_path: str, extract_path: str) -> None:
+    """Unpacks the tgz file of the dataset.
+
+    Args:
+        file_path (str): The path of the tgz file
+        extract_path (str): The path to store the unpacked tgz
+    """
+        
+    os.makedirs("data", exist_ok=True)
+    file = tarfile.open(file_path, "r")
+    for item in file:
+        file.extract(item, extract_path)
 
 
 class AugmentedData(Dataset):
@@ -26,8 +43,8 @@ class AugmentedData(Dataset):
 
     transforms = Compose(
         [
-            Resize(448),
-            CenterCrop(448),
+            Resize(224),
+            CenterCrop(224),
             ToTensor(),
             Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
@@ -81,18 +98,19 @@ def generate_dataset(path: str) -> ImageFolder:
 
 def create_dataloaders(
     dataset: ImageFolder,
-    train_split: float = 0.7,
-    test_split: float = 0.2,
-    validation_split: float = 0.1,
-    batch_size: int = 64,
+    device: torch.device,
+    train_split: float = 0.5,
+    test_split: float = 0.25,
+    validation_split: float = 0.25,
+    batch_size: int = 256,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Splits the dataset into train-, validation- and test-data. Establishes batches.
 
     Args:
         dataset (ImageFolder): The dataset
-        train_split (float, optional): The train split in percent. Defaults to 0.7.
-        test_split (float, optional): The test split in percent. Defaults to 0.2.
-        validation_split (float, optional): The validatiom split in percent. Defaults to 0.1.
+        train_split (float, optional): The train split in percent. Defaults to 0.5.
+        test_split (float, optional): The test split in percent. Defaults to 0.25.
+        validation_split (float, optional): The validatiom split in percent. Defaults to 0.25.
         batch_size (int, optional): The batch size. Defaults to 64.
 
     Returns:
@@ -100,14 +118,16 @@ def create_dataloaders(
     """
 
     train, validate, test = random_split(
-        dataset=dataset, lengths=[train_split, validation_split, test_split]
+        dataset=dataset,
+        lengths=[train_split, validation_split, test_split],
+        generator=torch.Generator(device=device).manual_seed(0),
     )
 
     train = AugmentedData(
         train,
         transforms=Compose(
             [
-                RandomResizedCrop(448, scale=(0.6, 1.0)),
+                RandomResizedCrop(224, scale=(0.6, 1.0)),
                 RandomHorizontalFlip(),
                 ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3),
                 RandomRotation(20),

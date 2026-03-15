@@ -12,6 +12,7 @@ import numpy as np
 from datetime import datetime
 import os
 import sys
+import torch
 from src.falkenstein.utils.logger import Tee
 
 
@@ -68,6 +69,7 @@ def model(config: str, cub_200_2001_path: str) -> None:
         validation_split=config["validation_split"],
         test_split=config["test_split"],
         batch_size=config["batch_size"],
+        device=device
     )
 
     model = Falkenstein().to(device=device)
@@ -92,7 +94,6 @@ def model(config: str, cub_200_2001_path: str) -> None:
     torch.save(model.state_dict(), f"weights/{datetime.now()}")
     test(model=model, dataloader=train_data, device=device)
     test(model=model, dataloader=validate_data, device=device)
-    test(model=model, dataloader=test_data, device=device)
 
 
 if __name__ == "__main__":
@@ -102,7 +103,5 @@ if __name__ == "__main__":
 
     sys.stdout = Tee(sys.__stdout__, log_file)
     sys.stderr = Tee(sys.__stderr__, log_file)
-
-    print("test")
 
     model("config.yaml", "data/CUB_200_2011/images")

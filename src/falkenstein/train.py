@@ -30,6 +30,7 @@ def train(
         num_epochs (int): Maximum number of training epochs
         device (torch.device): Device to train on
         patience (int): Number of epochs without improvement before stopping. Defaults to 5.
+        scheduler (lr_scheduler.LRScheduler | None): A learning rate scheduler. Defaults to None.
     """
 
     best_validation_loss = inf
@@ -77,6 +78,5 @@ def train(
                 break
 
     model.load_state_dict(best_weights)
-    plot_loss(validation_loss_mem, "validation loss")
-    plot_loss(training_loss_mem, "training loss")
-    print(f"Best validation loss: {best_validation_loss}")
+    plot_loss(train_loss_data=training_loss_mem, validate_loss_data=validation_loss_mem)
+    print(f"validation loss: {best_validation_loss}")

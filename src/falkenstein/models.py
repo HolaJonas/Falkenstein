@@ -4,8 +4,8 @@ from torch import nn, Tensor
 
 class Falkenstein(nn.Module):
     """A DenseNet121-based classification model implemented to work on the CUB-200-dataset.
-    The classification-layer is replaced by a custom layer, containing a Linear layer (1024,512) with Dropout (p=0.5) and ReLU,
-    and a Linear output layer with (512,200) and Dropout (p=0.5).
+    The classification-layer is replaced by a custom layer, containing a Linear layer (1024,512) and ReLU,
+    and a Linear output layer with (512,200).
     Weights of the last 2 DenseBlocks are unfreezed, while others are freezed."""
 
     def __init__(self):
@@ -24,10 +24,8 @@ class Falkenstein(nn.Module):
                 param.requires_grad = False
 
         self.denseNet121.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Dropout(p=0.5),
             nn.Linear(512, 200),
         )
 
