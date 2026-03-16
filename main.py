@@ -1,7 +1,7 @@
 from torch import nn
 from torch.optim import AdamW, lr_scheduler
 from src.falkenstein.models import Falkenstein
-from src.falkenstein.data import generate_dataset, create_dataloaders
+from src.falkenstein.data import generate_dataset, create_dataloaders, prepare_dataset
 from src.falkenstein.train import train
 from src.falkenstein.test import test
 import yaml
@@ -12,11 +12,10 @@ import numpy as np
 from datetime import datetime
 import os
 import sys
-import torch
 from src.falkenstein.utils.logger import Tee
 
 
-def seed() -> None:
+def __seed() -> None:
     """Seeds all used imports to make results reproducable."""
 
     random.seed(0)
@@ -25,7 +24,7 @@ def seed() -> None:
     torch.cuda.manual_seed_all(0)
 
 
-def init_cuda(fraction: float = 0.33) -> torch.device:
+def __init_cuda(fraction: float = 0.33) -> torch.device:
     """Initializes all necessary cuda settings to limit capacity.
 
     Returns:
@@ -52,27 +51,34 @@ def model(config: str, cub_200_2001_path: str) -> None:
             'num_epochs',
             'batch_size',
             'weight_decay'
+            'classifier_hidden_dim'
+            'output_layers_type'
+            'dropout'
 
         cub_200_2001_path (str): The path to the dataset
     """
 
-    seed()
-    device = init_cuda(0.33)
+    __seed()
+    device = __init_cuda(0.33)
 
     with open(config) as f:
         config = yaml.safe_load(f)
 
     dataset = generate_dataset(cub_200_2001_path)
-    train_data, validate_data, test_data = create_dataloaders(
+    train_data, validate_data, _ = create_dataloaders(
         dataset=dataset,
         train_split=config["train_split"],
         validation_split=config["validation_split"],
         test_split=config["test_split"],
         batch_size=config["batch_size"],
-        device=device
+        device=device,
     )
 
-    model = Falkenstein().to(device=device)
+    model = Falkenstein(
+        dropout=config["dropout"],
+        head_type=config["output_layers_type"],
+        classifier_hidden_dim=config["classifier_hidden_dim"],
+    ).to(device=device)
     optimizer = AdamW(
         params=model.parameters(),
         lr=config["learning_rate"],
@@ -97,6 +103,7 @@ def model(config: str, cub_200_2001_path: str) -> None:
 
 
 if __name__ == "__main__":
+
     os.makedirs("logs", exist_ok=True)
     log_path = f"logs/{datetime.now()}.log"
     log_file = open(log_path, "w")
@@ -104,4 +111,4 @@ if __name__ == "__main__":
     sys.stdout = Tee(sys.__stdout__, log_file)
     sys.stderr = Tee(sys.__stderr__, log_file)
 
-    model("config.yaml", "data/CUB_200_2011/images")
+    model("configs/config.yaml", "data/CUB_200_2011/images")

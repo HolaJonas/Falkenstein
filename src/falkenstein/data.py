@@ -111,7 +111,7 @@ def create_dataloaders(
         train_split (float, optional): The train split in percent. Defaults to 0.5.
         test_split (float, optional): The test split in percent. Defaults to 0.25.
         validation_split (float, optional): The validatiom split in percent. Defaults to 0.25.
-        batch_size (int, optional): The batch size. Defaults to 64.
+        batch_size (int, optional): The batch size. Defaults to 256.
 
     Returns:
         tuple[DataLoader, DataLoader, DataLoader]: A triple containing train-, validation- and testdata

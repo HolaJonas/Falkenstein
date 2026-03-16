@@ -1,6 +1,5 @@
 .venv
 data/*
-data/attributes.txtg
 src/falkenstein/__pycache__
 src/falkenstein/utils/__pycache__
 results

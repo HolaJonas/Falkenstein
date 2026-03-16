@@ -4,11 +4,21 @@ from torch import nn, Tensor
 
 class Falkenstein(nn.Module):
     """A DenseNet121-based classification model implemented to work on the CUB-200-dataset.
-    The classification-layer is replaced by a custom layer, containing a Linear layer (1024,512) and ReLU,
-    and a Linear output layer with (512,200).
-    Weights of the last 2 DenseBlocks are unfreezed, while others are freezed."""
+    The classification-layer is replaced by either a mlp or a linear layer, based on parameters.
 
-    def __init__(self):
+    Args:
+        output_layers_type (str): The type of classifier layers. 'linear' or 'mlp'. Defaults to 'mlp'.
+        dropout (float): The dropout rate of each layer. Defaults to 0.
+        classifier_hidden_dim (int): The number of hidden neurons in the mlp. Only applies when 'output_layers_type' is 'mlp'. Defaults to 512.
+
+    """
+
+    def __init__(
+        self,
+        output_layers_type: str = "mlp",
+        dropout: float = 0,
+        classifier_hidden_dim: int = 512,
+    ) -> None:
         super().__init__()
         self.denseNet121 = torchvision.models.densenet121(
             weights=torchvision.models.DenseNet121_Weights.IMAGENET1K_V1
@@ -17,17 +27,36 @@ class Falkenstein(nn.Module):
         for name, param in self.denseNet121.named_parameters():
             if any(
                 x in name
-                for x in ["denseblock3", "transition3", "denseblock4", "norm5"]
+                for x in [
+                    "denseblock3",
+                    "transition3",
+                    "denseblock4",
+                    "norm5",
+                    "transition2",
+                    "denseblock2",
+                    "transition1",
+                    "denseblock1",
+                ]
             ):
                 param.requires_grad = True
             else:
                 param.requires_grad = False
 
-        self.denseNet121.classifier = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Linear(512, 200),
-        )
+        if output_layers_type == "linear":
+            self.denseNet121.classifier = nn.Sequential(
+                nn.Dropout(dropout),
+                nn.Linear(1024, 200),
+            )
+        elif output_layers_type == "mlp":
+            self.denseNet121.classifier = nn.Sequential(
+                nn.Dropout(dropout),
+                nn.Linear(1024, classifier_hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(dropout),
+                nn.Linear(classifier_hidden_dim, 200),
+            )
+        else:
+            raise ValueError("Unsupported output_layer_type. 'linear' or 'mlp'.")
 
     def forward(self, X: Tensor) -> Tensor:
         """A forward pass of the network.
