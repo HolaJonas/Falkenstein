@@ -37,9 +37,6 @@ See [models.py](src/falkenstein/models.py) for implementation details.
 **Note:** The model exhibits overfitting (validation/test accuracy ~15% lower than training). Improvements are still possible.
 
 
-## Download dataset:
-
-
 ## Usage
 
 ### Training
